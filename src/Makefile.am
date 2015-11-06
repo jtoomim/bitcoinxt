@@ -94,6 +94,7 @@ BITCOIN_CORE_H = \
   consensus/params.h \
   consensus/validation.h \
   core_io.h \
+  curl_wrapper.h \
   eccryptoverify.h \
   ecwrapper.h \
   hash.h \
@@ -101,6 +102,7 @@ BITCOIN_CORE_H = \
   ipgroups.h \
   key.h \
   keystore.h \
+  leakybucket.h \
   leveldbwrapper.h \
   limitedmap.h \
   main.h \
@@ -181,8 +183,10 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   chain.cpp \
   checkpoints.cpp \
+  curl_wrapper.cpp \
   init.cpp \
   ipgroups.cpp \
+  leakybucket.cpp \
   leveldbwrapper.cpp \
   main.cpp \
   merkleblock.cpp \
