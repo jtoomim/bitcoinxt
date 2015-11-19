@@ -2099,7 +2099,11 @@ void CNode::AskFor(const CInv& inv)
         nRequestTime = it->second;
     else
         nRequestTime = 0;
-    LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000), id);
+    if (inv.type == MSG_TX)
+        LogPrint("netfull", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000), id);
+    else
+        LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000), id);
+
 
     // Make sure not to reuse time indexes to keep things in the same order
     int64_t nNow = GetTimeMicros() - 1000000;
@@ -2124,7 +2128,7 @@ void CNode::BeginMessage(const char* pszCommand) EXCLUSIVE_LOCK_FUNCTION(cs_vSen
     ENTER_CRITICAL_SECTION(cs_vSend);
     assert(ssSend.size() == 0);
     ssSend << CMessageHeader(Params().MessageStart(), pszCommand, 0);
-    LogPrint("net", "sending: %s ", SanitizeString(pszCommand));
+    //LogPrint("net", "sending: %s ", SanitizeString(pszCommand));
 }
 
 void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
@@ -2133,10 +2137,10 @@ void CNode::AbortMessage() UNLOCK_FUNCTION(cs_vSend)
 
     LEAVE_CRITICAL_SECTION(cs_vSend);
 
-    LogPrint("net", "(aborted)\n");
+    LogPrint("netfull", "(aborted)\n");
 }
 
-void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
+void CNode::EndMessage(const char* pszCommand) UNLOCK_FUNCTION(cs_vSend)
 {
     // The -*messagestest options are intentionally not documented in the help message,
     // since they are only used during development to debug the networking code and are
@@ -2154,8 +2158,13 @@ void CNode::EndMessage() UNLOCK_FUNCTION(cs_vSend)
         return;
 
     unsigned int nSize = CNetMessage::FinalizeHeader(ssSend);
-
-    LogPrint("net", "(%d bytes) peer=%d\n", nSize, id);
+    if (!strcmp(pszCommand, "inv") || !strcmp(pszCommand, "tx") || !strcmp(pszCommand, "notfound")) {
+        LogPrint("netfull", "sending: %s ", SanitizeString(pszCommand));
+        LogPrint("netfull", "(%d bytes) peer=%d\n", nSize, id);
+    } else {
+        LogPrint("net", "sending: %s ", SanitizeString(pszCommand));
+        LogPrint("net", "(%d bytes) peer=%d\n", nSize, id);
+    }
 
     std::deque<CSerializeData>::iterator it = vSendMsg.insert(vSendMsg.end(), CSerializeData());
     ssSend.GetAndClear(*it);
