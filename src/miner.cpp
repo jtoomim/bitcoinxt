@@ -52,6 +52,7 @@ public:
     }
 };
 
+uint64_t nBlockMaxSize;
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockSize = 0;
 
@@ -137,7 +138,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Largest block you're willing to create, defaults to being the biggest possible.
         // Miners can adjust downwards if they wish to throttle their blocks, for instance, to work around
         // high orphan rates or other scaling problems.
-        uint64_t nBlockMaxSize = (uint64_t) GetArg("-blockmaxsize", nConsensusMaxSize);
         // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
         nBlockMaxSize = std::max((uint64_t)1000,
                                  std::min(nConsensusMaxSize-1000, nBlockMaxSize));

@@ -600,6 +600,32 @@ Value getblocktemplate(const Array& params, bool fHelp)
     return result;
 }
 
+Value setblockmaxsize(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 1)
+        throw runtime_error(
+            "setblockmaxsize size\n"
+            "\nSet the maximum block size in bytes for getblocktemplate.\n"
+            "\nArguments:\n"
+            "1. size           (numeric, required) The maximum size (in bytes) of blocks to create when mining.\n"
+            "\nResult\n"
+            "true|false        (boolean) Returns true if successful\n"
+            "\nExamples:\n"
+            + HelpExampleCli("setblockmaxsize", "1000000")
+            + HelpExampleRpc("setblockmaxsize", "1000000")
+        );
+
+    LOCK(cs_main); // need to block against getblocktemplate
+
+    // Amount
+    uint64_t size = nBlockMaxSize;
+    if (params[0].get_real() > 1000)
+        size = (params[0].get_int64());        // rejects 0.0 amounts
+
+    nBlockMaxSize = size;
+    return true;
+}
+
 class submitblock_StateCatcher : public CValidationInterface
 {
 public:
