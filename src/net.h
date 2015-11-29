@@ -326,7 +326,7 @@ public:
     std::set<uint256> setKnown;
 
     // inventory based relay
-    CRollingBloomFilter setInventoryKnown;
+    CRollingBloomFilter filterInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::multimap<int64_t, CInv> mapAskFor;
@@ -423,9 +423,9 @@ public:
     {
         {
             LOCK(cs_inventory);
-            if (setInventoryKnown.contains(inv.hash))
+            if (filterInventoryKnown.contains(inv.hash))
                 return false;
-            setInventoryKnown.insert(inv.hash);
+            filterInventoryKnown.insert(inv.hash);
             return true;
         }
     }
@@ -434,7 +434,7 @@ public:
     {
         {
             LOCK(cs_inventory);
-            if (!setInventoryKnown.contains(inv.hash))
+            if (!filterInventoryKnown.contains(inv.hash))
                 vInventoryToSend.push_back(inv);
         }
     }
