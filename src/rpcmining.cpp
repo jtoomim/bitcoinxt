@@ -670,6 +670,7 @@ Value submitblock(const Array& params, bool fHelp)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
 
     uint256 hash = block.GetHash();
+    LogPrintf("submitblock: hash=%s\n", block.GetHash().ToString());
     bool fBlockPresent = false;
     {
         LOCK(cs_main);

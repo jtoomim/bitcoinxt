@@ -676,7 +676,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fPrintToConsole = GetBoolArg("-printtoconsole", false);
     fLogTimestamps = GetBoolArg("-logtimestamps", true);
     fLogTimeMicros = GetBoolArg("-logtimemicros", DEFAULT_LOGTIMEMICROS);
-    fLogIPs = GetBoolArg("-logips", false);
+    fLogIPs = GetBoolArg("-logips", true);
 
     // when specifying an explicit binding address, you want to listen on it
     // even when -connect or -proxy is specified
