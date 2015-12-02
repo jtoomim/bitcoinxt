@@ -468,7 +468,6 @@ CBlockTemplate* CreateNewBlock2(const CScript& scriptPubKeyIn)
         // Largest block you're willing to create, defaults to being the biggest possible.
         // Miners can adjust downwards if they wish to throttle their blocks, for instance, to work around
         // high orphan rates or other scaling problems.
-        uint64_t nBlockMaxSize = (uint64_t) GetArg("-blockmaxsize", nConsensusMaxSize);
         // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
         nBlockMaxSize = std::max((uint64_t)1000,
                                  std::min(nConsensusMaxSize-1000, nBlockMaxSize));
@@ -724,7 +723,7 @@ CBlockTemplate* CreateNewBlock2(const CScript& scriptPubKeyIn)
 
         t6 = GetTimeMicros();
         CValidationState state;
-        if (!TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        if (!GetRandInt(20) && !TestBlockValidity(state, *pblock, pindexPrev, false, false))
             throw std::runtime_error("CreateNewBlock2(): TestBlockValidity failed");
         t7 = GetTimeMicros();
     }
