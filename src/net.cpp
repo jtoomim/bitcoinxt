@@ -2040,7 +2040,7 @@ CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fIn
     fWhitelisted = false;
     fOneShot = false;
     fClient = false; // set by version message
-    thinBlockWaitingForTxns = -1;
+    thinBlockNonce = 0;
     fInbound = fInboundIn;
     fNetworkNode = false;
     fSuccessfullyConnected = false;
@@ -2176,4 +2176,22 @@ void CNode::EndMessage(const char* pszCommand) UNLOCK_FUNCTION(cs_vSend)
         SocketSendData(this);
 
     LEAVE_CRITICAL_SECTION(cs_vSend);
+}
+
+bool CNode::SupportsBloom() const {
+    return nVersion < NO_BLOOM_VERSION || nServices & NODE_BLOOM;
+}
+
+bool CNode::SupportsThinBlocks() const {
+    return SupportsBloom(); // Remove line when enough nodes run PR #711 and PR #109
+    if (!SupportsBloom())
+        return false;
+
+    // Before Bitcoin Core PR #7100 and Bitcoin XT PR #109 peers would
+    // only track 1000 inv entries in filterInventoryKnown - causing them
+    // to send us a lot more txs than we require for thin blocks.
+
+    // Some pre-releases of Bitcoin Core 0.12 have >= NO_BLOOM_VERSION, without
+    // this fix, so those will be a false positive.
+    return nVersion >= NO_BLOOM_VERSION;
 }
