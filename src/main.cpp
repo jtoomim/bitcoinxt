@@ -202,9 +202,6 @@ bool UsingThinBlocks() {
     return GetBoolArg("-use-thin-blocks", false);
 }
 
-uint256 thinBlockLastAttempted;
-uint256 thinBlockBlacklist;
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Registration of network node signals.
@@ -4605,20 +4602,8 @@ bool ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, int64_t
                     if (chainActive.Tip()->GetBlockTime() > GetAdjustedTime() - chainparams.GetConsensus().nPowTargetSpacing * 20 &&
                         nodestate->nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
                         CInv inv2(inv);
-
-
-                        // A small percentage of thin block downloads fail repeatedly with short messages
-                        // in ProcessMessages(). Let's avoid trying to download the same block via thin blocks
-                        // more than once or twice. This method is a quick and dirty hack; a better method
-                        // would be to use a map of blacklisted hashes instead of a single blacklisted hash
-                        // and to check in ProcessMessages to find the actual hash of the invalid thin block
-                        // message. However, this should work well enough for performance testing. FIXME.
-
-                        if (UsingThinBlocks() && thinBlockBlacklist != inv.hash) {
+                        if (UsingThinBlocks())
                             inv2.type = MSG_FILTERED_BLOCK;
-                            thinBlockLastAttempted = inv.hash;
-                        } else if (UsingThinBlocks())
-                            LogPrintf("Avoided thin block transmission of %s due to blacklist\n", inv.hash.ToString().c_str());
                         vToFetch.push_back(inv2);
                         // Mark block as in flight already, even though the actual "getdata" message only goes out
                         // later (within the same cs_main lock, though).
@@ -5413,10 +5398,6 @@ bool ProcessMessages(CNode* pfrom)
             {
                 // Allow exceptions from under-length message on vRecv
                 LogPrintf("%s(%s, %u bytes): Exception '%s' caught, normally caused by a message being shorter than its stated length\n", __func__, SanitizeString(strCommand), nMessageSize, e.what());
-                if (strCommand == "merkleblock") {
-                    thinBlockBlacklist = thinBlockLastAttempted;
-                    LogPrint("Setting thinBlockBlackList = %s\n", thinBlockBlacklist.ToString().c_str());
-                }
             }
             else if (strstr(e.what(), "size too large"))
             {
