@@ -11,7 +11,6 @@
 #include "hash.h"
 #include "leakybucket.h"
 #include "limitedmap.h"
-#include "mruset.h"
 #include "netbase.h"
 #include "protocol.h"
 #include "random.h"
@@ -295,11 +294,8 @@ public:
     int nRefCount;
     NodeId id;
 
-    // If we've received a thin block from this peer, it's stored here until we have enough data to complete it.
-    CBlock thinBlock;
-    std::vector<uint256> thinBlockHashes;
-    int thinBlockWaitingForTxns;   // if -1 then not currently waiting
-    uint64_t thinBlockNonce;    // the nonce we expect to find in a pong message marking end of tx data.
+    // the nonce we expect to find in a pong message marking end of thin block tx data.
+    uint64_t thinBlockNonce;
 
 protected:
 
@@ -327,7 +323,7 @@ public:
     std::set<uint256> setKnown;
 
     // inventory based relay
-    mruset<CInv> setInventoryKnown;
+    CRollingBloomFilter filterInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
     std::multimap<int64_t, CInv> mapAskFor;
@@ -424,7 +420,10 @@ public:
     {
         {
             LOCK(cs_inventory);
-            return setInventoryKnown.insert(inv).second;
+            if (filterInventoryKnown.contains(inv.hash))
+                return false;
+            filterInventoryKnown.insert(inv.hash);
+            return true;
         }
     }
 
@@ -432,8 +431,9 @@ public:
     {
         {
             LOCK(cs_inventory);
-            if (!setInventoryKnown.count(inv))
-                vInventoryToSend.push_back(inv);
+            if (inv.type == MSG_TX && filterInventoryKnown.contains(inv.hash))
+                return;
+            vInventoryToSend.push_back(inv);
         }
     }
 
@@ -639,6 +639,11 @@ public:
 
     static uint64_t GetTotalBytesRecv();
     static uint64_t GetTotalBytesSent();
+
+    // Node (probably) supports filter_* commands
+    bool SupportsBloom() const;
+
+    bool SupportsThinBlocks() const;
 };
 
 
